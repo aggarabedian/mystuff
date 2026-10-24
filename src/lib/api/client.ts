@@ -1,5 +1,3 @@
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
 import type {
   Auth0Profile,
   ContainerSummary,
@@ -23,11 +21,13 @@ import type {
   UpdateShelfRowInput,
   UserProfile,
 } from "@/types/storage";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 
 // Resolve the backend URL via environment variables.
 // For local development, this would be something like http://192.168.1.x:3000
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "https://your-production-backend.com";
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.x:5000";
 
 export class ApiError extends Error {
   status: number;
