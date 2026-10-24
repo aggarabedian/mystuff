@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Text, useTheme } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, roomsApi } from "@/lib/api/client";
 
@@ -137,7 +137,9 @@ export function EditRoomView({ roomId }: EditRoomViewProps) {
             </Button>
             <Button
               mode="contained"
-              onPress={handleSubmit(onSubmit)}
+              onPress={() => {
+                void handleSubmit(onSubmit)();
+              }}
               disabled={submitting}
               loading={submitting}
               style={styles.actionBtn}

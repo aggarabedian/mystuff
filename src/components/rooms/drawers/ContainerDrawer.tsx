@@ -19,7 +19,7 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, containersApi } from "@/lib/api/client";
@@ -296,7 +296,9 @@ export function ContainerDrawer({
               </Button>
               <Button
                 mode="contained"
-                onPress={handleSubmit(onSubmit)}
+                onPress={() => {
+                  void handleSubmit(onSubmit)();
+                }}
                 disabled={submitting}
                 loading={submitting}
                 style={styles.actionBtn}

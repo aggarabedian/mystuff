@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
     Image,
     KeyboardAvoidingView,
@@ -19,7 +19,7 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, itemsApi } from "@/lib/api/client";
 
@@ -59,7 +59,7 @@ export function ItemDrawer({
   const [submitting, setSubmitting] = React.useState(false);
   const isEditing = Boolean(item);
 
-  const { control, handleSubmit, watch, reset } = useForm<ItemFormData>({
+  const { control, handleSubmit, reset } = useForm<ItemFormData>({
     defaultValues: {
       name: "",
       quantity: "1",
@@ -68,7 +68,7 @@ export function ItemDrawer({
     },
   });
 
-  const photoUrlValue = watch("photoUrl");
+  const photoUrlValue = useWatch({ control, name: "photoUrl" }) ?? "";
 
   React.useEffect(() => {
     if (item) {
@@ -274,7 +274,9 @@ export function ItemDrawer({
               </Button>
               <Button
                 mode="contained"
-                onPress={handleSubmit(onSubmit)}
+                onPress={() => {
+                  void handleSubmit(onSubmit)();
+                }}
                 disabled={submitting}
                 loading={submitting}
                 style={styles.actionBtn}

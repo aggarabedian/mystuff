@@ -12,7 +12,6 @@ const FILTER_OPTIONS: { label: string; value: StorageSearchResultType }[] = [
   { label: "Items", value: "item" },
   { label: "Containers", value: "container" },
   { label: "Shelves", value: "shelf" },
-  { label: "Rooms", value: "room" },
 ];
 
 export function SearchFilters({

@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
     ActivityIndicator,
@@ -14,7 +14,7 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useAuth, useNotification } from "@/app/providers";
+import { useAuth, useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, navigateToAuth, profileApi } from "@/lib/api/client";
 import { getDisplayName, getInitials } from "@/lib/utils/profile";
@@ -44,7 +44,6 @@ export function ProfileView() {
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
     formState: { isDirty },
   } = useForm<ProfileFormData>({
@@ -65,9 +64,10 @@ export function ProfileView() {
     }
   }, [profile, reset]);
 
-  const watchedFirstName = watch("firstName");
-  const watchedLastName = watch("lastName");
-  const watchedAvatarUrl = watch("avatarUrl");
+  const watchedFirstName =
+    useWatch({ control, name: "firstName" }) ?? "";
+  const watchedLastName = useWatch({ control, name: "lastName" }) ?? "";
+  const watchedAvatarUrl = useWatch({ control, name: "avatarUrl" }) ?? "";
 
   const liveInitials = getInitials(
     watchedFirstName,
@@ -344,7 +344,9 @@ export function ProfileView() {
                   mode="contained"
                   disabled={saving}
                   loading={saving}
-                  onPress={handleSubmit(onSubmit)}
+                  onPress={() => {
+                    void handleSubmit(onSubmit)();
+                  }}
                   style={styles.actionBtn}
                 >
                   {saving ? "Saving..." : "Save Profile"}

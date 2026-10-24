@@ -11,7 +11,7 @@ import {
     useTheme
 } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { PrintLabelButton } from "@/components/common/PrintLabelButton";
 import { ContainerDrawer } from "@/components/rooms/drawers/ContainerDrawer";
@@ -87,7 +87,6 @@ export function RoomDetailView({ roomId }: RoomDetailViewProps) {
 
   const fetchRoomTree = React.useCallback(async () => {
     try {
-      setLoading(true);
       const res = await roomsApi.getTree(roomId);
       setRoom(res.room);
     } catch (err) {
@@ -101,7 +100,7 @@ export function RoomDetailView({ roomId }: RoomDetailViewProps) {
   }, [roomId, showNotification]);
 
   React.useEffect(() => {
-    fetchRoomTree();
+    void Promise.resolve().then(fetchRoomTree);
   }, [fetchRoomTree]);
 
   // Delete confirmation modal state
@@ -299,7 +298,12 @@ export function RoomDetailView({ roomId }: RoomDetailViewProps) {
             <Button
               mode="outlined"
               icon="pencil"
-              onPress={() => router.push(`/rooms/${room.id}/edit`)}
+              onPress={() =>
+                router.push({
+                  pathname: "/rooms/[id]/edit",
+                  params: { id: room.id },
+                })
+              }
             >
               Edit
             </Button>

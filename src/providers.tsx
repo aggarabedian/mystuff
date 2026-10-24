@@ -3,7 +3,7 @@ import type { Auth0Profile, UserProfile } from "@/types/storage";
 import * as React from "react";
 import { MD3LightTheme, PaperProvider, Snackbar } from "react-native-paper";
 
-// Replicate your MUI theme colors for React Native Paper
+// Keep the converted app's original palette in React Native Paper.
 const theme = {
   ...MD3LightTheme,
   colors: {
@@ -99,9 +99,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const refreshUser = React.useCallback(async () => {
+  const loadUser = React.useCallback(async () => {
     try {
-      setLoading(true);
       const auth0Profile = await authApi.getMe();
       setUser(auth0Profile);
       if (auth0Profile) {
@@ -119,9 +118,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [refreshProfile]);
 
+  const refreshUser = React.useCallback(async () => {
+    setLoading(true);
+    await loadUser();
+  }, [loadUser]);
+
   React.useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    void Promise.resolve().then(loadUser);
+  }, [loadUser]);
 
   // Determine dynamic background color for the Snackbar based on severity
   const getSnackbarColor = (severity: AlertColor) => {

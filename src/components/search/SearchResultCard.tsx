@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { Card, Text, TouchableRipple, useTheme } from "react-native-paper";
 
+import { getStorageSearchResultLocation } from "@/lib/utils/storage-search";
 import type { StorageSearchResult } from "@/types/storage";
 
 interface SearchResultCardProps {
@@ -21,23 +22,28 @@ export function SearchResultCard({ result }: SearchResultCardProps) {
         return "all-inbox";
       case "shelf":
         return "table-rows";
-      case "room":
-        return "meeting-room";
       default:
         return "search";
     }
   };
 
-  const getUrl = () => {
+  const handlePress = () => {
     switch (result.type) {
-      case "room":
       case "shelf":
-        return `/rooms/${result.roomId}`;
+        router.push({
+          pathname: "/rooms/[id]",
+          params: { id: result.location.room.id },
+        });
+        return;
       case "container":
       case "item":
-        return `/rooms/${result.roomId}?highlight=${result.id}`;
+        router.push({
+          pathname: "/rooms/[id]",
+          params: { id: result.location.room.id, highlight: result.id },
+        });
+        return;
       default:
-        return "/rooms";
+        router.push("/rooms");
     }
   };
 
@@ -49,8 +55,6 @@ export function SearchResultCard({ result }: SearchResultCardProps) {
         return "Container";
       case "shelf":
         return "Shelf";
-      case "room":
-        return "Room";
       default:
         return "Result";
     }
@@ -59,7 +63,7 @@ export function SearchResultCard({ result }: SearchResultCardProps) {
   return (
     <Card style={styles.card} mode="outlined">
       <TouchableRipple
-        onPress={() => router.push(getUrl() as any)}
+        onPress={handlePress}
         style={styles.touchArea}
       >
         <View style={styles.content}>
@@ -112,7 +116,7 @@ export function SearchResultCard({ result }: SearchResultCardProps) {
                 ]}
                 numberOfLines={1}
               >
-                {result.path}
+                {getStorageSearchResultLocation(result)}
               </Text>
             </View>
 

@@ -20,7 +20,7 @@ import {
   useTheme,
 } from "react-native-paper";
 
-import { useAuth, useNotification } from "@/app/providers";
+import { useAuth, useNotification } from "@/providers";
 import { PrintLabelButton } from "@/components/common/PrintLabelButton";
 import { QrScanner } from "@/components/containers/QrScanner";
 import { ApiError, containersApi } from "@/lib/api/client";
@@ -294,7 +294,10 @@ export function QrLookupView() {
             }}
           >
             No container matched QR code{"\n"}
-            <Text style={{ fontWeight: "bold" }}>"{qrCode}"</Text>.{"\n"}
+            <Text style={{ fontWeight: "bold" }}>
+              &quot;{qrCode}&quot;
+            </Text>
+            .{"\n"}
             Verify the code and try again.
           </Text>
         </Surface>

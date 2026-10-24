@@ -18,10 +18,10 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useAuth, useNotification } from "@/app/providers";
+import { useAuth, useNotification } from "@/providers";
 import { QuoteCard } from "@/components/common/QuoteCard";
 import { ApiError, navigateToAuth, roomsApi } from "@/lib/api/client";
-import { getDisplayName, getInitials } from "@/lib/utils/profile";
+import { getInitials } from "@/lib/utils/profile";
 import type { RoomSummary } from "@/types/storage";
 
 export function DashboardOverview() {
@@ -31,27 +31,27 @@ export function DashboardOverview() {
   const { user, loading: authLoading, profile } = useAuth();
   const { showNotification } = useNotification();
 
-  const [rooms, setRooms] = React.useState<RoomSummary[]>([]);
-  const [loadingRooms, setLoadingRooms] = React.useState(false);
+  const [roomsState, setRoomsState] = React.useState<{
+    ownerSub: string;
+    rooms: RoomSummary[];
+  } | null>(null);
+  const loadingRooms = !!user && roomsState?.ownerSub !== user.sub;
 
   const loadRooms = React.useCallback(async () => {
     if (!user) return;
     try {
-      setLoadingRooms(true);
       const data = await roomsApi.list();
-      setRooms(data);
+      setRoomsState({ ownerSub: user.sub, rooms: data });
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        // Not authenticated
+      if (!(err instanceof ApiError && err.status === 401)) {
+        showNotification("Could not load storage rooms.", "error");
       }
-    } finally {
-      setLoadingRooms(false);
+      setRoomsState({ ownerSub: user.sub, rooms: [] });
     }
-  }, [user]);
+  }, [showNotification, user]);
 
   React.useEffect(() => {
-    if (user) loadRooms();
-    else setRooms([]);
+    if (user) void Promise.resolve().then(loadRooms);
   }, [user, loadRooms]);
 
   if (authLoading) {
@@ -104,12 +104,9 @@ export function DashboardOverview() {
   }
 
   // Authenticated View
-  const displayName = getDisplayName(
-    profile?.firstName,
-    profile?.lastName,
-    user.name || user.email,
-  );
   const isTablet = width > 768;
+  const roomList =
+    roomsState?.ownerSub === user.sub ? roomsState.rooms : [];
 
   const shortcuts = [
     {
@@ -120,7 +117,7 @@ export function DashboardOverview() {
     },
     {
       title: "View All Rooms",
-      subtitle: `${rooms.length} ${rooms.length === 1 ? "room" : "rooms"} configured`,
+      subtitle: `${roomList.length} ${roomList.length === 1 ? "room" : "rooms"} configured`,
       icon: "meeting-room",
       href: "/rooms",
     },
@@ -136,8 +133,7 @@ export function DashboardOverview() {
       icon: "manage-accounts",
       href: "/profile",
     },
-  ];
-
+  ] as const;
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Hero Section */}
@@ -176,13 +172,13 @@ export function DashboardOverview() {
             >
               <Card style={styles.shortcutCard} mode="outlined">
                 <TouchableRipple
-                  onPress={() => router.push(shortcut.href as any)}
+                  onPress={() => router.push(shortcut.href)}
                   style={styles.shortcutTouch}
                 >
                   <View>
                     <View style={styles.shortcutIconBox}>
                       <MaterialIcons
-                        name={shortcut.icon as any}
+                        name={shortcut.icon}
                         size={24}
                         color="#FFF"
                       />
@@ -235,7 +231,7 @@ export function DashboardOverview() {
         <View style={styles.centerContainer}>
           <ActivityIndicator />
         </View>
-      ) : rooms.length === 0 ? (
+      ) : roomList.length === 0 ? (
         <Card style={styles.emptyCard}>
           <Card.Content style={styles.emptyCardContent}>
             <View
@@ -278,14 +274,19 @@ export function DashboardOverview() {
         </Card>
       ) : (
         <View style={styles.grid}>
-          {rooms.map((room) => (
+          {roomList.map((room) => (
             <View
               key={room.id}
               style={[styles.gridItem, isTablet && styles.gridItemTablet]}
             >
               <Card style={styles.roomCard} mode="outlined">
                 <TouchableRipple
-                  onPress={() => router.push(`/rooms/${room.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/rooms/[id]",
+                      params: { id: room.id },
+                    })
+                  }
                   style={styles.roomTouch}
                 >
                   <View>

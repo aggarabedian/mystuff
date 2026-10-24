@@ -1,5 +1,28 @@
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import type {
+  Auth0Profile,
+  ContainerSummary,
+  CreateContainerInput,
+  CreateItemInput,
+  CreateRoomInput,
+  CreateShelfInput,
+  CreateShelfRowInput,
+  ItemSummary,
+  NestedStorageTreeResponse,
+  RoomSummary,
+  SearchParams,
+  ShelfRowSummary,
+  ShelfSummary,
+  StorageSearchResponse,
+  UpdateContainerInput,
+  UpdateItemInput,
+  UpdateProfileInput,
+  UpdateRoomInput,
+  UpdateShelfInput,
+  UpdateShelfRowInput,
+  UserProfile,
+} from "@/types/storage";
 
 // Resolve the backend URL via environment variables.
 // For local development, this would be something like http://192.168.1.x:3000
@@ -81,20 +104,29 @@ export async function navigateToAuth(type: "login" | "logout" | "signup") {
 // --- API Service Objects ---
 
 export const authApi = {
-  getMe: () => apiFetch<any>("/api/auth/me"),
+  getMe: () => apiFetch<Auth0Profile>("/api/auth/me"),
 };
 
 export const profileApi = {
-  get: () => apiFetch<any>("/api/profile"),
+  get: () => apiFetch<UserProfile>("/api/profile"),
+  update: (data: UpdateProfileInput) =>
+    apiFetch<UserProfile>("/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const roomsApi = {
-  list: () => apiFetch<any[]>("/api/rooms"),
-  getTree: (id: string) => apiFetch<any>(`/api/rooms/${id}/tree`),
-  create: (data: any) =>
-    apiFetch<any>("/api/rooms", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/api/rooms/${id}`, {
+  list: () => apiFetch<RoomSummary[]>("/api/rooms"),
+  getTree: (id: string) =>
+    apiFetch<NestedStorageTreeResponse>(`/api/rooms/${id}/tree`),
+  create: (data: CreateRoomInput) =>
+    apiFetch<RoomSummary>("/api/rooms", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: UpdateRoomInput) =>
+    apiFetch<RoomSummary>(`/api/rooms/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -103,13 +135,13 @@ export const roomsApi = {
 };
 
 export const shelvesApi = {
-  create: (roomId: string, data: any) =>
-    apiFetch<any>(`/api/rooms/${roomId}/shelves`, {
+  create: (roomId: string, data: CreateShelfInput) =>
+    apiFetch<ShelfSummary>(`/api/rooms/${roomId}/shelves`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/api/shelves/${id}`, {
+  update: (id: string, data: UpdateShelfInput) =>
+    apiFetch<ShelfSummary>(`/api/shelves/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -118,13 +150,13 @@ export const shelvesApi = {
 };
 
 export const shelfRowsApi = {
-  create: (shelfId: string, data: any) =>
-    apiFetch<any>(`/api/shelves/${shelfId}/rows`, {
+  create: (shelfId: string, data: CreateShelfRowInput) =>
+    apiFetch<ShelfRowSummary>(`/api/shelves/${shelfId}/rows`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/api/shelf-rows/${id}`, {
+  update: (id: string, data: UpdateShelfRowInput) =>
+    apiFetch<ShelfRowSummary>(`/api/shelf-rows/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -133,19 +165,22 @@ export const shelfRowsApi = {
 };
 
 export const containersApi = {
-  lookupByQr: (qrCode: string) => apiFetch<any>(`/api/containers/qr/${qrCode}`),
-  createOnRow: (rowId: string, data: any) =>
-    apiFetch<any>(`/api/shelf-rows/${rowId}/containers`, {
+  lookupByQr: (qrCode: string) =>
+    apiFetch<ContainerSummary>(
+      `/api/containers/qr/${encodeURIComponent(qrCode)}`,
+    ),
+  createOnRow: (rowId: string, data: CreateContainerInput) =>
+    apiFetch<ContainerSummary>(`/api/shelf-rows/${rowId}/containers`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  createNested: (parentId: string, data: any) =>
-    apiFetch<any>(`/api/containers/${parentId}/containers`, {
+  createNested: (parentId: string, data: CreateContainerInput) =>
+    apiFetch<ContainerSummary>(`/api/containers/${parentId}/containers`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/api/containers/${id}`, {
+  update: (id: string, data: UpdateContainerInput) =>
+    apiFetch<ContainerSummary>(`/api/containers/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -154,18 +189,18 @@ export const containersApi = {
 };
 
 export const itemsApi = {
-  createOnRow: (rowId: string, data: any) =>
-    apiFetch<any>(`/api/shelf-rows/${rowId}/items`, {
+  createOnRow: (rowId: string, data: CreateItemInput) =>
+    apiFetch<ItemSummary>(`/api/shelf-rows/${rowId}/items`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  createInContainer: (containerId: string, data: any) =>
-    apiFetch<any>(`/api/containers/${containerId}/items`, {
+  createInContainer: (containerId: string, data: CreateItemInput) =>
+    apiFetch<ItemSummary>(`/api/containers/${containerId}/items`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/api/items/${id}`, {
+  update: (id: string, data: UpdateItemInput) =>
+    apiFetch<ItemSummary>(`/api/items/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -174,12 +209,7 @@ export const itemsApi = {
 };
 
 export const searchApi = {
-  search: (params: {
-    q: string;
-    types?: string[];
-    limit?: number;
-    offset?: number;
-  }) => {
+  search: (params: SearchParams) => {
     const searchParams = new URLSearchParams();
     searchParams.append("q", params.q);
     if (params.types)
@@ -187,6 +217,8 @@ export const searchApi = {
     if (params.limit) searchParams.append("limit", params.limit.toString());
     if (params.offset) searchParams.append("offset", params.offset.toString());
 
-    return apiFetch<any>(`/api/search?${searchParams.toString()}`);
+    return apiFetch<StorageSearchResponse>(
+      `/api/search?${searchParams.toString()}`,
+    );
   },
 };

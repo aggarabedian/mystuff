@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Chip, Text, useTheme } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, roomsApi } from "@/lib/api/client";
 
@@ -54,7 +54,7 @@ export function CreateRoomView() {
 
       // Navigate to the newly created room and replace the current history stack
       // so hitting 'back' doesn't return to this form
-      router.replace(`/rooms/${newRoom.id}`);
+      router.replace({ pathname: "/rooms/[id]", params: { id: newRoom.id } });
     } catch (err) {
       if (err instanceof ApiError) {
         showNotification(err.message, "error");
@@ -146,7 +146,9 @@ export function CreateRoomView() {
             </Button>
             <Button
               mode="contained"
-              onPress={handleSubmit(onSubmit)}
+              onPress={() => {
+                void handleSubmit(onSubmit)();
+              }}
               disabled={submitting}
               loading={submitting}
               style={styles.actionBtn}

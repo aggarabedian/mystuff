@@ -245,6 +245,7 @@ export interface StorageSearchResult {
   id: string;
   name: string;
   description?: string;
+  quantity?: number;
   location: {
     room: { id: string; name: string };
     shelf?: { id: string; name: string };

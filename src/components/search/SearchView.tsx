@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Button, Text, TextInput, useTheme } from "react-native-paper";
 
-import { useAuth, useNotification } from "@/app/providers";
+import { useAuth, useNotification } from "@/providers";
 import { ApiError, searchApi } from "@/lib/api/client";
 import type {
   StorageSearchResult,
@@ -104,7 +104,7 @@ export function SearchView({
   const [offset, setOffset] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const [loadingMore, setLoadingMore] = React.useState(false);
-  const [hasSearched, setHasSearched] = React.useState(!!initialQuery.trim());
+  const hasSearched = !!debouncedQuery.trim();
 
   React.useEffect(() => {
     if (!authLoading && !user) {
@@ -122,19 +122,12 @@ export function SearchView({
   React.useEffect(() => {
     if (!user) return;
     const q = debouncedQuery.trim();
-    if (!q) {
-      setResults([]);
-      setHasMore(false);
-      setOffset(0);
-      setHasSearched(false);
-      return;
-    }
+    if (!q) return;
 
     let cancelled = false;
 
     const run = async () => {
       setLoading(true);
-      setHasSearched(true);
       try {
         const res = await searchApi.search({
           q,
@@ -163,7 +156,16 @@ export function SearchView({
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, selectedTypes, user]);
+  }, [debouncedQuery, selectedTypes, showNotification, user]);
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (!value.trim()) {
+      setResults([]);
+      setHasMore(false);
+      setOffset(0);
+    }
+  };
 
   const handleLoadMore = async () => {
     const q = debouncedQuery.trim();
@@ -221,7 +223,7 @@ export function SearchView({
         mode="outlined"
         placeholder="Search for anything…"
         value={query}
-        onChangeText={setQuery}
+        onChangeText={handleQueryChange}
         autoFocus={!initialQuery}
         autoCapitalize="none"
         autoCorrect={false}
@@ -282,7 +284,7 @@ export function SearchView({
             color={theme.colors.surfaceVariant}
           />
           <Text variant="titleMedium" style={styles.emptyTitle}>
-            No results for "{trimmedQuery}"
+            No results for &quot;{trimmedQuery}&quot;
           </Text>
           <Text
             variant="bodyMedium"
@@ -301,7 +303,7 @@ export function SearchView({
             ]}
           >
             {results.length} result{results.length !== 1 ? "s" : ""}
-            {hasMore ? "+" : ""} for "{trimmedQuery}"
+            {hasMore ? "+" : ""} for &quot;{trimmedQuery}&quot;
           </Text>
 
           <View style={styles.resultsList}>

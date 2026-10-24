@@ -23,23 +23,15 @@ export function QuoteCard({
   style,
 }: QuoteCardProps) {
   const theme = useTheme();
-  const [currentIndex, setCurrentIndex] = React.useState(0);
-
-  // Animation values
-  const fadeAnim = React.useRef(new Animated.Value(1)).current;
-  const spinAnim = React.useRef(new Animated.Value(0)).current;
-
-  // Initialize with a daily quote
-  React.useEffect(() => {
-    if (quotes.length > 1) {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), 0, 0);
-      const diff = now.getTime() - start.getTime();
-      const oneDay = 1000 * 60 * 60 * 24;
-      const dayOfYear = Math.floor(diff / oneDay);
-      setCurrentIndex(dayOfYear % quotes.length);
-    }
-  }, [quotes.length]);
+  const [currentIndex, setCurrentIndex] = React.useState(() => {
+    if (quotes.length <= 1) return 0;
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+    return dayOfYear % quotes.length;
+  });
+  const [fadeAnim] = React.useState(() => new Animated.Value(1));
+  const [spinAnim] = React.useState(() => new Animated.Value(0));
 
   const handleShuffle = () => {
     if (quotes.length <= 1) return;
@@ -129,7 +121,7 @@ export function QuoteCard({
             variant="bodyLarge"
             style={[styles.quoteText, { color: theme.colors.onSurface }]}
           >
-            "{currentQuote.quote}"
+            &quot;{currentQuote.quote}&quot;
           </Text>
           <Text
             variant="bodyMedium"

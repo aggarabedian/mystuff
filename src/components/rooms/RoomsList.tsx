@@ -18,7 +18,7 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useAuth, useNotification } from "@/app/providers";
+import { useAuth, useNotification } from "@/providers";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { ApiError, navigateToAuth, roomsApi } from "@/lib/api/client";
 import type { RoomSummary } from "@/types/storage";
@@ -30,8 +30,14 @@ export function RoomsList() {
   const { user, loading: authLoading } = useAuth();
   const { showNotification } = useNotification();
 
-  const [rooms, setRooms] = React.useState<RoomSummary[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [roomsState, setRoomsState] = React.useState<{
+    ownerSub: string;
+    rooms: RoomSummary[];
+  } | null>(null);
+  const roomList =
+    user && roomsState?.ownerSub === user.sub ? roomsState.rooms : [];
+  const loading =
+    authLoading || (!!user && roomsState?.ownerSub !== user.sub);
 
   // Menu state for actions
   const [visibleMenuId, setVisibleMenuId] = React.useState<string | null>(null);
@@ -43,30 +49,27 @@ export function RoomsList() {
   const [deleting, setDeleting] = React.useState(false);
 
   const fetchRooms = React.useCallback(async () => {
+    if (!user) return;
+    const ownerSub = user.sub;
     try {
-      setLoading(true);
       const data = await roomsApi.list();
-      setRooms(data);
+      setRoomsState({ ownerSub, rooms: data });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         // Not authenticated
+        setRoomsState({ ownerSub, rooms: [] });
       } else {
         showNotification(
           "Could not load rooms. Please check your backend connection.",
           "error",
         );
+        setRoomsState({ ownerSub, rooms: [] });
       }
-    } finally {
-      setLoading(false);
     }
-  }, [showNotification]);
+  }, [showNotification, user]);
 
   React.useEffect(() => {
-    if (user) {
-      fetchRooms();
-    } else {
-      setLoading(false);
-    }
+    if (user) void Promise.resolve().then(fetchRooms);
   }, [user, fetchRooms]);
 
   const handleConfirmDelete = async () => {
@@ -74,7 +77,14 @@ export function RoomsList() {
     try {
       setDeleting(true);
       await roomsApi.delete(deleteTarget.id);
-      setRooms((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+      setRoomsState((prev) =>
+        prev && prev.ownerSub === user?.sub
+          ? {
+              ...prev,
+              rooms: prev.rooms.filter((room) => room.id !== deleteTarget.id),
+            }
+          : prev,
+      );
       showNotification(`Room "${deleteTarget.name}" deleted.`, "info");
       setDeleteTarget(null);
     } catch (err) {
@@ -143,7 +153,7 @@ export function RoomsList() {
               </Button>
             </Card.Content>
           </Card>
-        ) : rooms.length === 0 ? (
+        ) : roomList.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Card.Content style={styles.emptyCardContent}>
               <MaterialIcons
@@ -156,8 +166,8 @@ export function RoomsList() {
                 No storage rooms found
               </Text>
               <Text variant="bodyMedium" style={styles.emptySubtitle}>
-                Get started by creating a room like "Garage", "Attic", or
-                "Storage Unit".
+                Get started by creating a room like &quot;Garage&quot;,
+                &quot;Attic&quot;, or &quot;Storage Unit&quot;.
               </Text>
               <Button
                 mode="contained"
@@ -170,7 +180,7 @@ export function RoomsList() {
           </Card>
         ) : (
           <View style={styles.grid}>
-            {rooms.map((room) => (
+            {roomList.map((room) => (
               <View
                 key={room.id}
                 style={[styles.gridItem, isTablet && styles.gridItemTablet]}
@@ -193,7 +203,10 @@ export function RoomsList() {
                         leadingIcon="pencil"
                         onPress={() => {
                           setVisibleMenuId(null);
-                          router.push(`/rooms/${room.id}/edit`);
+                          router.push({
+                            pathname: "/rooms/[id]/edit",
+                            params: { id: room.id },
+                          });
                         }}
                         title="Edit Room"
                       />
@@ -210,7 +223,12 @@ export function RoomsList() {
                   </View>
 
                   <TouchableRipple
-                    onPress={() => router.push(`/rooms/${room.id}`)}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/rooms/[id]",
+                        params: { id: room.id },
+                      })
+                    }
                     style={styles.roomTouch}
                   >
                     <View>

@@ -1,6 +1,6 @@
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { buildApiUrl } from "@/lib/api/client";
-import * as FileSystem from "expo-file-system/legacy";
+import { File, Paths } from "expo-file-system";
 import * as Print from "expo-print";
 import * as React from "react";
 import { Button, useTheme } from "react-native-paper";
@@ -26,33 +26,15 @@ export function PrintLabelButton({ qrCode }: PrintLabelButtonProps) {
 
       if (!response.ok) throw new Error("Failed to generate label");
 
-      // Read blob as base64 to save it to the local file system
-      const blob = await response.blob();
-      const reader = new FileReader();
-
-      reader.onloadend = async () => {
-        try {
-          const base64data = reader.result as string;
-          // Extract the raw base64 string from the data URI (data:application/pdf;base64,...)
-          const base64 = base64data.split(",")[1];
-          const fileUri = `${FileSystem.cacheDirectory}label-${qrCode}.pdf`;
-
-          await FileSystem.writeAsStringAsync(fileUri, base64, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-
-          // Trigger the native OS print dialog
-          await Print.printAsync({ uri: fileUri });
-        } catch (err) {
-          showNotification("Could not open print dialog.", "error");
-        } finally {
-          setPrinting(false);
-        }
-      };
-      reader.readAsDataURL(blob);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const safeQrCode = qrCode.replace(/[^a-zA-Z0-9_-]/g, "_");
+      const file = new File(Paths.cache, `label-${safeQrCode}.pdf`);
+      await file.write(bytes);
+      await Print.printAsync({ uri: file.uri });
     } catch (error) {
       console.error(error);
       showNotification("Could not fetch or print the label.", "error");
+    } finally {
       setPrinting(false);
     }
   };

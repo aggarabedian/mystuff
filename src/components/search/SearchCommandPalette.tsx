@@ -19,6 +19,7 @@ import {
 } from "react-native-paper";
 
 import { searchApi } from "@/lib/api/client";
+import { getStorageSearchResultLocation } from "@/lib/utils/storage-search";
 import type { StorageSearchResult } from "@/types/storage";
 
 interface SearchCommandPaletteProps {
@@ -38,14 +39,13 @@ export function SearchCommandPalette({
   const [results, setResults] = React.useState<StorageSearchResult[]>([]);
   const [loading, setLoading] = React.useState(false);
 
-  // Reset state when opened
-  React.useEffect(() => {
-    if (visible) {
-      setQuery("");
-      setDebouncedQuery("");
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (!value.trim()) {
       setResults([]);
+      setLoading(false);
     }
-  }, [visible]);
+  };
 
   // Fast debounce for the command palette (150ms instead of 300ms)
   React.useEffect(() => {
@@ -55,10 +55,7 @@ export function SearchCommandPalette({
 
   React.useEffect(() => {
     const q = debouncedQuery.trim();
-    if (!q) {
-      setResults([]);
-      return;
-    }
+    if (!q) return;
 
     let cancelled = false;
     const fetchQuickResults = async () => {
@@ -68,8 +65,8 @@ export function SearchCommandPalette({
         if (!cancelled) {
           setResults(res.results);
         }
-      } catch (err) {
-        // Silently fail for the quick palette to avoid spamming toast notifications
+      } catch (error) {
+        console.error("Quick search failed", error);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -84,19 +81,25 @@ export function SearchCommandPalette({
   const handleSelectResult = (result: StorageSearchResult) => {
     onClose();
     // Navigate based on type
-    if (result.type === "room" || result.type === "shelf") {
-      router.push(`/rooms/${result.roomId}`);
+    if (result.type === "shelf") {
+      router.push({
+        pathname: "/rooms/[id]",
+        params: { id: result.location.room.id },
+      });
     } else {
-      router.push(`/rooms/${result.roomId}?highlight=${result.id}`);
+      router.push({
+        pathname: "/rooms/[id]",
+        params: {
+          id: result.location.room.id,
+          highlight: result.id,
+        },
+      });
     }
   };
 
   const handleSeeAll = () => {
     onClose();
-    // In a real implementation, you would pass the query parameter to the search route
-    // e.g., router.push(`/search?q=${encodeURIComponent(query)}`)
-    // For now, we'll just navigate to the search screen
-    router.push("/search");
+    router.push({ pathname: "/search", params: { q: query.trim() } });
   };
 
   const getIcon = (type: string) => {
@@ -107,8 +110,6 @@ export function SearchCommandPalette({
         return "all-inbox";
       case "shelf":
         return "table-rows";
-      case "room":
-        return "meeting-room";
       default:
         return "search";
     }
@@ -141,7 +142,7 @@ export function SearchCommandPalette({
               mode="flat"
               placeholder="Jump to a room, box, or item..."
               value={query}
-              onChangeText={setQuery}
+              onChangeText={handleQueryChange}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
@@ -215,7 +216,7 @@ export function SearchCommandPalette({
                       numberOfLines={1}
                       style={{ color: theme.colors.onSurfaceVariant }}
                     >
-                      {result.path}
+                      {getStorageSearchResultLocation(result)}
                     </Text>
                   </View>
                   <MaterialIcons
@@ -230,7 +231,7 @@ export function SearchCommandPalette({
                 <Text
                   style={{ color: theme.colors.primary, fontWeight: "bold" }}
                 >
-                  See all results for "{query.trim()}"
+                  See all results for &quot;{query.trim()}&quot;
                 </Text>
               </TouchableOpacity>
             </View>

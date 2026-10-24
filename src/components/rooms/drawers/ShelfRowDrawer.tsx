@@ -12,7 +12,7 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
 import { ApiError, shelfRowsApi } from "@/lib/api/client";
 
@@ -191,7 +191,9 @@ export function ShelfRowDrawer({
               </Button>
               <Button
                 mode="contained"
-                onPress={handleSubmit(onSubmit)}
+                onPress={() => {
+                  void handleSubmit(onSubmit)();
+                }}
                 disabled={submitting}
                 loading={submitting}
                 style={styles.actionBtn}

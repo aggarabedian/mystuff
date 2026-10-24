@@ -54,7 +54,7 @@ export function QrScanner({ onScanSuccess }: QrScannerProps) {
       <View style={styles.overlay}>
         <View style={styles.scanTarget} />
         <Text style={styles.hintText}>
-          Align the container's QR code within the frame
+          Align the container&apos;s QR code within the frame
         </Text>
       </View>
     </View>

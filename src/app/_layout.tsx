@@ -4,7 +4,7 @@ import * as React from "react";
 import { TouchableOpacity } from "react-native";
 import { useTheme } from "react-native-paper";
 
-import { Providers } from "@/app/providers";
+import { Providers } from "@/providers";
 import { SearchCommandPalette } from "@/components/search/SearchCommandPalette";
 
 // The root must export the layout component directly
@@ -69,6 +69,7 @@ function RootNavigation() {
 
       {/* The command palette mounts at the root level so it can overlay the entire stack */}
       <SearchCommandPalette
+        key={paletteOpen ? "open" : "closed"}
         visible={paletteOpen}
         onClose={() => setPaletteOpen(false)}
       />

@@ -7,11 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mystuff",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#334155"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourname.mystuff",
@@ -21,7 +16,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
         "backgroundColor": "#334155"
       },
       "package": "com.yourname.mystuff",
@@ -29,6 +26,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#334155"
+        }
+      ],
       [
         "expo-camera",
         {
