@@ -33,6 +33,7 @@ repomix-output.xml
 
 # local env files
 .env*.local
+.env.*
 
 # typescript
 *.tsbuildinfo

@@ -27,7 +27,7 @@ import * as WebBrowser from "expo-web-browser";
 // Resolve the backend URL via environment variables.
 // For local development, this would be something like http://192.168.1.x:3000
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.x:5000";
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.6:5000";
 
 export class ApiError extends Error {
   status: number;

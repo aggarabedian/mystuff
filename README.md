@@ -12,7 +12,16 @@ Native Paper for UI components.
    npm install
    ```
 
-2. Configure `EXPO_PUBLIC_API_URL` to point to the myStuff backend.
+2. Set the app's public backend origin in the root `.env.production` file:
+
+   ```dotenv
+   EXPO_PUBLIC_API_URL=https://your-backend.example.com
+   ```
+
+   This is the origin only; do not append `/api`. `EXPO_PUBLIC_` values are
+   embedded in the app bundle and are not secret. Auth0 client secrets and
+   other private backend credentials belong in the backend's environment,
+   never in this app's `.env` files.
 
 3. Start the app:
 
