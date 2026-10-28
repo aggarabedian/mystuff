@@ -51,8 +51,6 @@ async function apiFetch<T>(
 ): Promise<T> {
   const url = buildApiUrl(path);
 
-  // React Native's fetch automatically handles storing and sending cookies,
-  // just like the web browser, so your Next.js auth cookies will work!
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -84,27 +82,22 @@ async function apiFetch<T>(
 }
 
 /**
- * Native Auth0 redirect handling using Expo WebBrowser.
- * This opens a secure modal window for the user to log in,
- * then catches the redirect back to the app's custom URL scheme.
+ * Starts the backend's Auth0 flow and returns to this app's deep link.
  */
 export async function navigateToAuth(type: "login" | "logout" | "signup") {
-  // Create a deep link back to the app (e.g., mystuff://)
   const returnUrl = Linking.createURL("/");
 
-  // Construct the URL to your Next.js backend's auth route, appending the deep link
   const authUrl = buildApiUrl(
-    `/api/auth/${type}?returnTo=${encodeURIComponent(returnUrl)}`,
+    `/auth/${type}?returnTo=${encodeURIComponent(returnUrl)}`,
   );
 
-  // Open the secure auth session natively
   await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
 }
 
 // --- API Service Objects ---
 
 export const authApi = {
-  getMe: () => apiFetch<Auth0Profile>("/api/auth/me"),
+  getMe: () => apiFetch<Auth0Profile>("/me"),
 };
 
 export const profileApi = {
