@@ -39,7 +39,8 @@
         {
           "cameraPermission": "myStuff needs access to your camera to scan QR codes on your storage containers."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

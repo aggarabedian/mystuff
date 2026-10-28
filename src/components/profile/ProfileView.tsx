@@ -16,7 +16,8 @@ import {
 
 import { useAuth, useNotification } from "@/providers";
 import { FormTextField } from "@/components/forms/FormTextField";
-import { ApiError, navigateToAuth, profileApi } from "@/lib/api/client";
+import { useAuthFlow } from "@/hooks/use-auth-flow";
+import { ApiError, profileApi } from "@/lib/api/client";
 import { getDisplayName, getInitials } from "@/lib/utils/profile";
 
 interface ProfileFormData {
@@ -36,6 +37,7 @@ export function ProfileView() {
     setProfile,
   } = useAuth();
   const { showNotification } = useNotification();
+  const startAuth = useAuthFlow();
 
   const [saving, setSaving] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -164,7 +166,7 @@ export function ProfileView() {
             <Text variant="bodyMedium" style={styles.authSubtitle}>
               You must be signed in to view and edit your profile.
             </Text>
-            <Button mode="contained" onPress={() => navigateToAuth("login")}>
+            <Button mode="contained" onPress={() => startAuth("login")}>
               Sign In
             </Button>
           </Card.Content>

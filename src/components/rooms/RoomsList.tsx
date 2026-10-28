@@ -20,7 +20,8 @@ import {
 
 import { useAuth, useNotification } from "@/providers";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { ApiError, navigateToAuth, roomsApi } from "@/lib/api/client";
+import { useAuthFlow } from "@/hooks/use-auth-flow";
+import { ApiError, roomsApi } from "@/lib/api/client";
 import type { RoomSummary } from "@/types/storage";
 
 export function RoomsList() {
@@ -29,6 +30,7 @@ export function RoomsList() {
   const { width } = useWindowDimensions();
   const { user, loading: authLoading } = useAuth();
   const { showNotification } = useNotification();
+  const startAuth = useAuthFlow();
 
   const [roomsState, setRoomsState] = React.useState<{
     ownerSub: string;
@@ -148,7 +150,7 @@ export function RoomsList() {
               <Text variant="bodyMedium" style={styles.emptySubtitle}>
                 Please sign in to access and manage your private storage rooms.
               </Text>
-              <Button mode="contained" onPress={() => navigateToAuth("login")}>
+              <Button mode="contained" onPress={() => startAuth("login")}>
                 Sign In
               </Button>
             </Card.Content>

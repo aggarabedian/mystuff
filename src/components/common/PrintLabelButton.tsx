@@ -1,5 +1,5 @@
 import { useNotification } from "@/providers";
-import { buildApiUrl } from "@/lib/api/client";
+import { apiFetchBytes } from "@/lib/api/client";
 import { File, Paths } from "expo-file-system";
 import * as Print from "expo-print";
 import * as React from "react";
@@ -17,16 +17,9 @@ export function PrintLabelButton({ qrCode }: PrintLabelButtonProps) {
   const handlePrint = async () => {
     try {
       setPrinting(true);
-      const url = buildApiUrl(`/api/labels/${encodeURIComponent(qrCode)}`);
-
-      // We must fetch manually to include the session cookie; expo-print cannot pass credentials directly
-      const response = await fetch(url, {
-        credentials: "include",
-      });
-
-      if (!response.ok) throw new Error("Failed to generate label");
-
-      const bytes = new Uint8Array(await response.arrayBuffer());
+      const bytes = await apiFetchBytes(
+        `/api/labels/${encodeURIComponent(qrCode)}`,
+      );
       const safeQrCode = qrCode.replace(/[^a-zA-Z0-9_-]/g, "_");
       const file = new File(Paths.cache, `label-${safeQrCode}.pdf`);
       await file.write(bytes);

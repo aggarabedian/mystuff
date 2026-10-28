@@ -20,7 +20,8 @@ import {
 
 import { useAuth, useNotification } from "@/providers";
 import { QuoteCard } from "@/components/common/QuoteCard";
-import { ApiError, navigateToAuth, roomsApi } from "@/lib/api/client";
+import { useAuthFlow } from "@/hooks/use-auth-flow";
+import { ApiError, roomsApi } from "@/lib/api/client";
 import { getInitials } from "@/lib/utils/profile";
 import type { RoomSummary } from "@/types/storage";
 
@@ -30,6 +31,7 @@ export function DashboardOverview() {
   const { width } = useWindowDimensions();
   const { user, loading: authLoading, profile } = useAuth();
   const { showNotification } = useNotification();
+  const startAuth = useAuthFlow();
 
   const [roomsState, setRoomsState] = React.useState<{
     ownerSub: string;
@@ -84,7 +86,7 @@ export function DashboardOverview() {
               mode="contained"
               buttonColor="#FFF"
               textColor={theme.colors.primary}
-              onPress={() => navigateToAuth("login")}
+              onPress={() => startAuth("login")}
             >
               Sign In to Start
             </Button>
@@ -92,7 +94,7 @@ export function DashboardOverview() {
               mode="outlined"
               textColor="#FFF"
               style={{ borderColor: "#FFF" }}
-              onPress={() => navigateToAuth("signup")}
+              onPress={() => startAuth("signup")}
             >
               Create Account
             </Button>

@@ -23,11 +23,14 @@ import type {
 } from "@/types/storage";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
 
 // Resolve the backend URL via environment variables.
 // For local development, this would be something like http://192.168.1.x:3000
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.6:5000";
+const AUTH_TOKEN_KEY = "mystuff_mobile_access_token";
+let cachedAuthToken: string | null | undefined;
 
 export class ApiError extends Error {
   status: number;
@@ -45,21 +48,56 @@ export function buildApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
 
-async function apiFetch<T>(
+async function getAuthToken(): Promise<string | null> {
+  if (cachedAuthToken !== undefined) return cachedAuthToken;
+  if (Platform.OS === "web") {
+    cachedAuthToken = null;
+    return cachedAuthToken;
+  }
+  const SecureStore = await import("expo-secure-store");
+  cachedAuthToken = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+  return cachedAuthToken;
+}
+
+async function saveAuthToken(token: string): Promise<void> {
+  if (Platform.OS !== "web") {
+    const SecureStore = await import("expo-secure-store");
+    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+  }
+  cachedAuthToken = token;
+}
+
+async function clearAuthToken(): Promise<void> {
+  if (Platform.OS !== "web") {
+    const SecureStore = await import("expo-secure-store");
+    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+  }
+  cachedAuthToken = null;
+}
+
+async function authenticatedFetch(
   path: string,
   options: RequestInit = {},
-): Promise<T> {
+): Promise<Response> {
   const url = buildApiUrl(path);
+  const authToken = await getAuthToken();
+  const headers = new Headers(options.headers);
 
-  const response = await fetch(url, {
+  if (options.body != null && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (authToken) {
+    headers.set("Authorization", `Bearer ${authToken}`);
+  }
+
+  return fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
     credentials: "include",
   });
+}
 
+async function throwApiError(response: Response): Promise<void> {
   if (!response.ok) {
     let errorMessage = "An error occurred";
     let errorCode;
@@ -72,6 +110,14 @@ async function apiFetch<T>(
     }
     throw new ApiError(errorMessage, response.status, errorCode);
   }
+}
+
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await authenticatedFetch(path, options);
+  await throwApiError(response);
 
   // Handle 204 No Content
   if (response.status === 204) {
@@ -79,6 +125,12 @@ async function apiFetch<T>(
   }
 
   return response.json();
+}
+
+export async function apiFetchBytes(path: string): Promise<Uint8Array> {
+  const response = await authenticatedFetch(path);
+  await throwApiError(response);
+  return new Uint8Array(await response.arrayBuffer());
 }
 
 /**
@@ -91,7 +143,42 @@ export async function navigateToAuth(type: "login" | "logout" | "signup") {
     `/auth/${type}?returnTo=${encodeURIComponent(returnUrl)}`,
   );
 
-  await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+  if (result.type !== "success") return false;
+
+  if (type === "logout") {
+    await clearAuthToken();
+    return true;
+  }
+
+  if (Platform.OS === "web") return true;
+  if (!result.url) {
+    throw new Error("Sign-in completed without returning an app URL.");
+  }
+
+  const callbackUrl = new URL(result.url);
+  const expectedUrl = new URL(returnUrl);
+  if (
+    callbackUrl.protocol !== expectedUrl.protocol ||
+    callbackUrl.host !== expectedUrl.host ||
+    callbackUrl.pathname !== expectedUrl.pathname
+  ) {
+    throw new Error("Sign-in returned to an unexpected app URL.");
+  }
+
+  const code = callbackUrl.searchParams.get("authCode");
+  if (!code) throw new Error("Sign-in returned without an exchange code.");
+
+  const tokenResult = await apiFetch<{ token: string }>(
+    "/auth/mobile/exchange",
+    {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    },
+  );
+  if (!tokenResult.token) throw new Error("Sign-in did not return an app token.");
+  await saveAuthToken(tokenResult.token);
+  return true;
 }
 
 // --- API Service Objects ---
@@ -120,7 +207,7 @@ export const roomsApi = {
     }),
   update: (id: string, data: UpdateRoomInput) =>
     apiFetch<RoomSummary>(`/api/rooms/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
@@ -135,7 +222,7 @@ export const shelvesApi = {
     }),
   update: (id: string, data: UpdateShelfInput) =>
     apiFetch<ShelfSummary>(`/api/shelves/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
@@ -150,7 +237,7 @@ export const shelfRowsApi = {
     }),
   update: (id: string, data: UpdateShelfRowInput) =>
     apiFetch<ShelfRowSummary>(`/api/shelf-rows/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
@@ -174,7 +261,7 @@ export const containersApi = {
     }),
   update: (id: string, data: UpdateContainerInput) =>
     apiFetch<ContainerSummary>(`/api/containers/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
@@ -194,7 +281,7 @@ export const itemsApi = {
     }),
   update: (id: string, data: UpdateItemInput) =>
     apiFetch<ItemSummary>(`/api/items/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
