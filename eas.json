@@ -1,0 +1,10 @@
+{
+  "build": {
+    "appetize": {
+      "environment": "preview",
+      "ios": {
+        "simulator": true
+      }
+    }
+  }
+}

@@ -32,6 +32,41 @@ Native Paper for UI components.
 Expo can open the app in a development build, simulator, or web browser. See the
 [Expo documentation](https://docs.expo.dev/) for platform setup.
 
+## Build for Appetize.io (iOS)
+
+Appetize runs iOS Simulator builds, not App Store `.ipa` builds. The `appetize`
+EAS profile creates a simulator build and does not require Apple Developer
+signing.
+
+1. Sign in to an [Expo account](https://expo.dev/), then configure and link the
+   project:
+
+   ```bash
+   npx eas-cli@latest build:configure
+   ```
+
+   Follow the prompts to link this app to your Expo account.
+2. Add `EXPO_PUBLIC_API_URL` to the project's **Preview** environment variables
+   in the Expo dashboard. Set it to the same backend origin used in
+   `.env.production` (do not include `/api`). This value is embedded in the
+   app, so it must be a plain-text EAS environment variable; it is not a
+   secret. EAS cloud builds cannot read the ignored local `.env.production`
+   file.
+3. Check your EAS build allowance, then run:
+
+   ```bash
+   npm run build:appetize
+   ```
+
+4. Download the completed build artifact from the EAS build page. Upload a
+   `.zip` or `.tar.gz` containing the `.app` bundle to
+   [Appetize's upload page](https://appetize.io/upload). If the downloaded
+   artifact is not already such an archive, extract it and compress the `.app`
+   bundle itself first.
+
+This build is for Appetize and iOS simulators only; it is not installable on a
+physical iPhone. Android can be configured as a separate build profile later.
+
 ## Project structure
 
 - `src/app/` contains Expo Router screens and route layouts.
